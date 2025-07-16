@@ -1,0 +1,93 @@
+# Makefile for SurBlend development and deployment
+
+.PHONY: help install install-dev test lint format run-backend run-frontend build deploy clean backup
+
+help:
+	@echo "Available commands:"
+	@echo "  make install       - Install production dependencies"
+	@echo "  make install-dev   - Install development dependencies"
+	@echo "  make test          - Run tests"
+	@echo "  make lint          - Run linting"
+	@echo "  make format        - Format code"
+	@echo "  make run-backend   - Run backend server"
+	@echo "  make run-frontend  - Run frontend dev server"
+	@echo "  make build         - Build frontend for production"
+	@echo "  make deploy        - Deploy to production"
+	@echo "  make clean         - Clean temporary files"
+	@echo "  make backup        - Create backup"
+
+# Installation
+install:
+	cd backend && pip install -r requirements.txt
+	cd frontend && npm install
+
+install-dev:
+	cd backend && pip install -r requirements-dev.txt
+	cd frontend && npm install
+
+# Testing
+test:
+	cd backend && pytest
+
+test-coverage:
+	cd backend && pytest --cov=app --cov-report=html
+
+# Code quality
+lint:
+	cd backend && flake8 app/ --max-line-length=100
+	cd backend && mypy app/
+	cd frontend && npm run lint
+
+format:
+	cd backend && black app/ tests/
+	cd backend && isort app/ tests/
+
+# Development
+run-backend:
+	cd backend && uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+
+run-frontend:
+	cd frontend && npm run dev
+
+# Production
+build:
+	cd frontend && npm run build
+
+deploy:
+	sudo -u surblend /opt/surblend/deploy.sh
+
+# Database
+db-upgrade:
+	cd backend && alembic upgrade head
+
+db-migrate:
+	cd backend && alembic revision --autogenerate -m "$(message)"
+
+db-downgrade:
+	cd backend && alembic downgrade -1
+
+# Maintenance
+clean:
+	find . -type d -name "__pycache__" -exec rm -rf {} +
+	find . -type f -name "*.pyc" -delete
+	find . -type f -name "*.pyo" -delete
+	find . -type f -name ".coverage" -delete
+	rm -rf backend/htmlcov
+	rm -rf frontend/dist
+	rm -rf frontend/node_modules/.cache
+
+backup:
+	sudo -u surblend /opt/surblend/backup.sh
+
+# Docker (development only)
+docker-build:
+	docker-compose build
+
+docker-up:
+	docker-compose up -d
+
+docker-down:
+	docker-compose down
+
+docker-logs:
+	docker-compose logs -f

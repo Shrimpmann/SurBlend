@@ -1,0 +1,29 @@
+# SurBlend Cron Jobs
+# Install with: crontab -u surblend < crontab.txt
+
+# Daily backup at 2 AM
+0 2 * * * /opt/surblend/backup.sh >> /opt/surblend/logs/backup.log 2>&1
+
+# System monitoring every 15 minutes
+*/15 * * * * /opt/surblend/venv/bin/python /opt/surblend/scripts/monitor_system.py
+
+# Clean old logs weekly (Sunday at 3 AM)
+0 3 * * 0 find /opt/surblend/logs -name "*.log" -mtime +30 -delete
+
+# Database vacuum weekly (Sunday at 4 AM)
+0 4 * * 0 psql -U surblend -d surblend -c "VACUUM ANALYZE;"
+
+# Generate monthly reports (1st of each month at 6 AM)
+0 6 1 * * /opt/surblend/venv/bin/python /opt/surblend/scripts/generate_monthly_report.py
+
+# Update ingredient prices from CSV (if exists) daily at 1 AM
+0 1 * * * [ -f /opt/surblend/uploads/price_updates.csv ] && /opt/surblend/venv/bin/python /opt/surblend/scripts/update_prices.py
+
+# Clear temporary files daily at 5 AM
+0 5 * * * find /tmp -name "surblend_*" -mtime +1 -delete
+
+# Restart services weekly to prevent memory leaks (Sunday at 5 AM)
+0 5 * * 0 systemctl restart surblend
+
+# Check for system updates weekly (Monday at 1 AM) - log only, don't auto-update
+0 1 * * 1 apt list --upgradable 2>/dev/null | grep -v "Listing..." >> /opt/surblend/logs/available_updates.log
