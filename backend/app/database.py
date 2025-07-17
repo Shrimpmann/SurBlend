@@ -3,12 +3,13 @@ SurBlend Database Configuration
 PostgreSQL connection and session management
 """
 
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker, Session
-from sqlalchemy.pool import NullPool
-import os
-from dotenv import load_dotenv
 import logging
+import os
+
+from dotenv import load_dotenv
+from sqlalchemy import create_engine
+from sqlalchemy.orm import Session, sessionmaker
+from sqlalchemy.pool import NullPool
 
 # Load environment variables
 load_dotenv()
@@ -22,7 +23,7 @@ DATABASE_URL = os.getenv(
     f"{os.getenv('DB_PASSWORD', 'surblend123')}@"
     f"{os.getenv('DB_HOST', 'localhost')}:"
     f"{os.getenv('DB_PORT', '5432')}/"
-    f"{os.getenv('DB_NAME', 'surblend')}"
+    f"{os.getenv('DB_NAME', 'surblend')}",
 )
 
 # Create engine with connection pool optimized for Raspberry Pi
@@ -32,8 +33,8 @@ engine = create_engine(
     pool_size=5,
     max_overflow=10,
     pool_pre_ping=True,  # Verify connections before use
-    pool_recycle=3600,   # Recycle connections after 1 hour
-    echo=os.getenv("DB_ECHO", "false").lower() == "true"
+    pool_recycle=3600,  # Recycle connections after 1 hour
+    echo=os.getenv("DB_ECHO", "false").lower() == "true",
 )
 
 # Session factory
@@ -42,6 +43,7 @@ SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 # Import models to ensure they're registered
 from app.models import Base
 
+
 def get_db():
     """Dependency to get database session"""
     db = SessionLocal()
@@ -49,6 +51,7 @@ def get_db():
         yield db
     finally:
         db.close()
+
 
 async def test_connection():
     """Test database connection"""
@@ -61,6 +64,7 @@ async def test_connection():
         logger.error(f"Database connection failed: {e}")
         return False
 
+
 def create_tables():
     """Create all tables"""
     try:
@@ -69,6 +73,7 @@ def create_tables():
     except Exception as e:
         logger.error(f"Error creating tables: {e}")
         raise
+
 
 def drop_tables():
     """Drop all tables (use with caution!)"""
