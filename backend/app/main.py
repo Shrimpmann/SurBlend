@@ -9,7 +9,7 @@ import os
 from contextlib import asynccontextmanager
 from datetime import datetime, timedelta
 from typing import Optional
-
+from app.services.startup import initialize_database
 import uvicorn
 from dotenv import load_dotenv
 from fastapi import Depends, FastAPI, HTTPException, status
@@ -31,7 +31,7 @@ from app.auth.security import create_access_token, get_password_hash, verify_pas
 from app.database import Base, engine, get_db
 from app.models import User
 from app.routes import analytics, blends, customers, ingredients, quotes, system, users
-from app.schemas.auth import Token, TokenData
+from app.schemas.schemas import Token, TokenData
 from app.services.startup import create_default_admin, initialize_database
 
 
@@ -42,9 +42,6 @@ async def lifespan(app: FastAPI):
 
     # Initialize database
     await initialize_database()
-
-    # Create default admin if needed
-    await create_default_admin()
 
     yield
 

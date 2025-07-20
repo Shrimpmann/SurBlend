@@ -6,7 +6,7 @@ Data validation and serialization schemas
 from datetime import datetime
 from decimal import Decimal
 from enum import Enum
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Generic, TypeVar
 
 from pydantic import BaseModel, ConfigDict, EmailStr, Field, validator
 
@@ -34,7 +34,7 @@ class UserBase(BaseModel):
     username: str = Field(..., min_length=3, max_length=50)
     email: EmailStr
     full_name: Optional[str] = Field(None, max_length=100)
-    role: UserRole = UserRole.VIEWER
+    role: UserRole = UserRole.USER
 
 
 class UserCreate(UserBase):
@@ -138,6 +138,13 @@ class IngredientResponse(IngredientBase):
 
     model_config = ConfigDict(from_attributes=True)
 
+T = TypeVar("T")  # Define the generic type variable
+
+class PaginatedResponse(BaseModel, Generic[T]):
+    items: List[T]
+    total: int
+    page: Optional[int] = None
+    page_size: Optional[int] = None
 
 # Customer schemas
 class CustomerBase(BaseModel):
@@ -158,10 +165,8 @@ class CustomerBase(BaseModel):
     default_margin_type: Optional[str] = Field(default="percent", pattern="^(percent|fixed)$")
     default_margin_value: Optional[Decimal] = Field(None, ge=0)
 
-
-class CustomerCreate(CustomerBase):
-    pass
-
+class CustomerCreate(BaseModel):
+    name: str
 
 class CustomerUpdate(BaseModel):
     name: Optional[str] = None
@@ -222,6 +227,9 @@ class BlendBase(BaseModel):
     application_rate: Optional[float] = Field(None, gt=0)
     application_unit: str = Field(default="lbs/acre", max_length=20)
 
+
+class BlendCreate(BaseModel):
+    name: str
 
 class BlendCreate(BlendBase):
     ingredients: List[BlendIngredient]
