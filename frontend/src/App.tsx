@@ -11,6 +11,7 @@ import AuthLayout from '@/layouts/AuthLayout';
 // Pages
 import Login from '@/pages/auth/Login';
 import Dashboard from '@/pages/Dashboard';
+import AdminCenter from '@/pages/AdminCenter';
 import Ingredients from '@/pages/ingredients/Ingredients';
 import IngredientForm from '@/pages/ingredients/IngredientForm';
 import Blends from '@/pages/blends/Blends';
@@ -52,6 +53,7 @@ function App() {
             <Route element={<ProtectedRoute><MainLayout /></ProtectedRoute>}>
               <Route path="/" element={<Navigate to="/dashboard" replace />} />
               <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/admin" element={<AdminCenter />} />
 
               {/* Ingredients */}
               <Route path="/ingredients" element={<Ingredients />} />
