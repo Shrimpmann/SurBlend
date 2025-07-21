@@ -17,7 +17,7 @@ export interface PaginatedResponse<T> {
 
 // Create axios instance
 const api: AxiosInstance = axios.create({
-  baseURL: 'http://192.168.1.175:8000/api', // Changed from '/api'
+  baseURL: 'http://192.168.1.175:8000/api',
   headers: {
     'Content-Type': 'application/json',
   },
@@ -42,7 +42,6 @@ api.interceptors.response.use(
   (response) => response,
   async (error: AxiosError<ApiError>) => {
     if (error.response?.status === 401) {
-      // Token expired or invalid
       localStorage.removeItem('access_token');
       window.location.href = '/login';
     } else if (error.response?.status === 403) {
@@ -146,6 +145,29 @@ export const ingredientsApi = {
   },
 };
 
+// Chemicals API
+export const chemicalsApi = {
+  getAll: async (page = 1, size = 20, search?: string) => {
+    const params = new URLSearchParams({
+      page: page.toString(),
+      size: size.toString(),
+    });
+    if (search) params.append('search', search);
+
+    const response = await api.get<PaginatedResponse<any>>(`/chemicals?${params}`);
+    return response.data;
+  },
+
+  create: async (data: { name: string; aiPercentage: number; costPerUnit: number; displayOrder: number }) => {
+    const response = await api.post('/chemicals', data);
+    return response.data;
+  },
+
+  delete: async (id: number) => {
+    await api.delete(`/chemicals/${id}`);
+  },
+};
+
 // Blends API
 export const blendsApi = {
   getAll: async (page = 1, size = 20, isTemplate?: boolean) => {
@@ -164,7 +186,14 @@ export const blendsApi = {
     return response.data;
   },
 
-  create: async (data: any) => {
+  create: async (data: {
+    name: string;
+    ingredients: { ingredientId: number; quantity: number }[];
+    chemicals: { chemicalId: number; aiPercentage: number }[];
+    totalCost: number;
+    applicationRate: number;
+    nutrients: { n: number; p: number; k: number; s: number; ca: number; mg: number; fe: number; zn: number; mn: number; b: number; cl: number };
+  }) => {
     const response = await api.post('/blends', data);
     return response.data;
   },
@@ -182,8 +211,17 @@ export const blendsApi = {
     target_n?: number;
     target_p?: number;
     target_k?: number;
+    target_s?: number;
+    target_ca?: number;
+    target_mg?: number;
+    target_fe?: number;
+    target_zn?: number;
+    target_mn?: number;
+    target_b?: number;
+    target_cl?: number;
     max_cost?: number;
     available_ingredients?: number[];
+    available_chemicals?: number[];
   }) => {
     const response = await api.post('/blends/optimize', data);
     return response.data;
@@ -238,8 +276,8 @@ export const customersApi = {
   },
 };
 
-// Quotes API
-export const quotesApi = {
+// Tags API
+export const tagsApi = {
   getAll: async (page = 1, size = 20, status?: string) => {
     const params = new URLSearchParams({
       page: page.toString(),
@@ -247,43 +285,33 @@ export const quotesApi = {
     });
     if (status) params.append('status', status);
 
-    const response = await api.get<PaginatedResponse<any>>(`/quotes?${params}`);
+    const response = await api.get<PaginatedResponse<any>>(`/tags?${params}`);
     return response.data;
   },
 
   getById: async (id: number) => {
-    const response = await api.get(`/quotes/${id}`);
+    const response = await api.get(`/tags/${id}`);
     return response.data;
   },
 
-  create: async (data: any) => {
-    const response = await api.post('/quotes', data);
+  create: async (data: { customerName: string; blendId?: number; ingredients: { name: string; quantity: number }[] }) => {
+    const response = await api.post('/tags', data);
     return response.data;
   },
 
   update: async (id: number, data: any) => {
-    const response = await api.put(`/quotes/${id}`, data);
+    const response = await api.put(`/tags/${id}`, data);
     return response.data;
   },
 
   delete: async (id: number) => {
-    await api.delete(`/quotes/${id}`);
-  },
-
-  send: async (id: number, email: string) => {
-    const response = await api.post(`/quotes/${id}/send`, { email });
-    return response.data;
+    await api.delete(`/tags/${id}`);
   },
 
   generatePDF: async (id: number) => {
-    const response = await api.get(`/quotes/${id}/pdf`, {
+    const response = await api.get(`/tags/${id}/pdf`, {
       responseType: 'blob',
     });
-    return response.data;
-  },
-
-  duplicate: async (id: number) => {
-    const response = await api.post(`/quotes/${id}/duplicate`);
     return response.data;
   },
 };

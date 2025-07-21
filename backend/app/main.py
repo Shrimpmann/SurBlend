@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 SurBlend - Fertilizer Blending & Quoting System
 Main FastAPI Application
@@ -7,14 +6,14 @@ Main FastAPI Application
 import logging
 import os
 from contextlib import asynccontextmanager
-from datetime import datetime, timedelta
-from typing import Optional
-from app.services.startup import initialize_database
-import uvicorn
-from dotenv import load_dotenv
-from fastapi import Depends, FastAPI, HTTPException, status
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
+from fastapi.security import OAuth2PasswordBearer
+from app.services.startup import initialize_database
+from app.routes import analytics, blends, customers, ingredients, quotes, system, users
+from dotenv import load_dotenv
+import psutil
+from datetime import datetime
 
 # Load environment variables
 load_dotenv()
@@ -25,28 +24,14 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-from app.auth.security import create_access_token, get_password_hash, verify_password
-
-# Import our modules (to be created)
-from app.database import Base, engine, get_db
-from app.models import User
-from app.routes import analytics, blends, customers, ingredients, quotes, system, users
-from app.schemas.schemas import Token, TokenData
-from app.services.startup import create_default_admin, initialize_database
-
-
+# Define lifespan function before app instantiation
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Handle startup and shutdown events"""
     logger.info("Starting SurBlend application...")
-
-    # Initialize database
     await initialize_database()
-
     yield
-
     logger.info("Shutting down SurBlend application...")
-
 
 # Create FastAPI app
 app = FastAPI(
@@ -59,36 +44,27 @@ app = FastAPI(
 # Configure CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:5173",
-        "http://localhost:3000",
-        f"http://{os.getenv('HOST_IP', 'localhost')}:5173",
-    ],
+    allow_origins=os.getenv("CORS_ORIGINS", "").split(","),
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
 # OAuth2 scheme
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
-
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="api/users/token")
 
 # Root endpoint
 @app.get("/")
 async def root():
     return {"message": "SurBlend API", "version": "1.0.0", "status": "operational"}
 
-
 # Health check endpoint
 @app.get("/health")
 async def health_check():
     """System health check endpoint"""
-    import psutil
-
     cpu_percent = psutil.cpu_percent(interval=1)
     memory = psutil.virtual_memory()
     disk = psutil.disk_usage("/")
-
     return {
         "status": "healthy",
         "timestamp": datetime.utcnow().isoformat(),
@@ -101,42 +77,6 @@ async def health_check():
         },
     }
 
-
-# Authentication endpoint
-@app.post("/token", response_model=Token)
-async def login(form_data: OAuth2PasswordRequestForm = Depends(), db=Depends(get_db)):
-    """Login endpoint for OAuth2 password flow"""
-    from sqlalchemy.orm import Session
-
-    from app.crud.users import get_user_by_username
-
-    user = get_user_by_username(db, username=form_data.username)
-
-    if not user or not verify_password(form_data.password, user.hashed_password):
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Incorrect username or password",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
-
-    if not user.is_active:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN, detail="User account is disabled"
-        )
-
-    # Create access token
-    access_token_expires = timedelta(minutes=int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "60")))
-    access_token = create_access_token(
-        data={"sub": user.username, "role": user.role}, expires_delta=access_token_expires
-    )
-
-    # Update last login
-    user.last_login = datetime.utcnow()
-    db.commit()
-
-    return {"access_token": access_token, "token_type": "bearer"}
-
-
 # Include routers
 app.include_router(ingredients.router, prefix="/api/ingredients", tags=["ingredients"])
 app.include_router(blends.router, prefix="/api/blends", tags=["blends"])
@@ -147,5 +87,5 @@ app.include_router(analytics.router, prefix="/api/analytics", tags=["analytics"]
 app.include_router(system.router, prefix="/api/system", tags=["system"])
 
 if __name__ == "__main__":
-    # For development only
+    import uvicorn
     uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True, log_level="info")

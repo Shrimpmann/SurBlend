@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Blend, Tag } from 'lucide-react';
+import { Sprout, Tag, Users, Package, BarChart2, Settings } from 'lucide-react';
 
 function Dashboard() {
   const { user } = useAuth();
@@ -12,13 +12,13 @@ function Dashboard() {
   return (
     <div className="container mx-auto p-6">
       <h1 className="text-3xl font-bold text-green-900 mb-6">
-        Welcome, {user?.full_name || user?.username}!
+        Welcome, {user?.full_name || user?.username || 'User'}!
       </h1>
-      <div className="flex flex-col gap-4 max-w-md mx-auto">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 max-w-5xl mx-auto">
         <Card className="rounded-xl shadow-lg hover:shadow-xl transition-shadow duration-300 bg-white">
           <CardHeader>
             <CardTitle className="flex items-center text-lg text-green-700">
-              <Blend className="mr-2 h-5 w-5" />
+              <Sprout className="mr-2 h-5 w-5" />
               Surgrolator
             </CardTitle>
           </CardHeader>
@@ -49,10 +49,62 @@ function Dashboard() {
             </Button>
           </CardContent>
         </Card>
+        <Card className="rounded-xl shadow-lg hover:shadow-xl transition-shadow duration-300 bg-white">
+          <CardHeader>
+            <CardTitle className="flex items-center text-lg text-green-700">
+              <Package className="mr-2 h-5 w-5" />
+              Ingredient Management
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-gray-600 mb-4">Manage fertilizer ingredients and nutrient profiles.</p>
+            <Button
+              onClick={() => navigate('/ingredients')}
+              className="w-full bg-green-600 hover:bg-green-700 text-white rounded-lg"
+            >
+              Manage Ingredients
+            </Button>
+          </CardContent>
+        </Card>
+        <Card className="rounded-xl shadow-lg hover:shadow-xl transition-shadow duration-300 bg-white">
+          <CardHeader>
+            <CardTitle className="flex items-center text-lg text-green-700">
+              <Users className="mr-2 h-5 w-5" />
+              Customer Profiles
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-gray-600 mb-4">Manage customers, farms, and preferred blends.</p>
+            <Button
+              onClick={() => navigate('/customers')}
+              className="w-full bg-green-600 hover:bg-green-700 text-white rounded-lg"
+            >
+              View Customers
+            </Button>
+          </CardContent>
+        </Card>
+        <Card className="rounded-xl shadow-lg hover:shadow-xl transition-shadow duration-300 bg-white">
+          <CardHeader>
+            <CardTitle className="flex items-center text-lg text-green-700">
+              <BarChart2 className="mr-2 h-5 w-5" />
+              Analytics
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-gray-600 mb-4">Analyze quote, sales, and ingredient trends.</p>
+            <Button
+              onClick={() => navigate('/analytics')}
+              className="w-full bg-green-600 hover:bg-green-700 text-white rounded-lg"
+            >
+              View Analytics
+            </Button>
+          </CardContent>
+        </Card>
         {user?.role === 'ADMIN' && (
           <Card className="rounded-xl shadow-lg hover:shadow-xl transition-shadow duration-300 bg-white">
             <CardHeader>
               <CardTitle className="flex items-center text-lg text-green-700">
+                <Settings className="mr-2 h-5 w-5" />
                 Admin Center
               </CardTitle>
             </CardHeader>
